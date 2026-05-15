@@ -21,9 +21,10 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { sampleLanding } from "@/lib/ai/sample";
 import { cn } from "@/lib/utils";
 import type {
+  AiProviderId,
   GenerateLandingError,
   GeneratedLanding,
-  LandingInput,
+  LandingPromptInput,
   VisualTone,
 } from "@/types/landing";
 
@@ -42,8 +43,18 @@ const viewportOptions: { label: string; value: PreviewViewport }[] = [
   { label: "Mobile", value: "mobile" },
 ];
 
+const providerOptions: { label: string; value: AiProviderId }[] = [
+  { label: "Mock local", value: "mock" },
+  { label: "Claude Sonnet", value: "anthropic" },
+];
+
 export function DashboardWorkspace() {
-  const [form, setForm] = useState<LandingInput>(sampleLanding.input);
+  const [form, setForm] = useState<LandingPromptInput>({
+    prompt: sampleLanding.input.sourcePrompt,
+    provider: "mock",
+    model: "",
+    visualTone: sampleLanding.input.visualTone,
+  });
   const [landing, setLanding] = useState<GeneratedLanding>(sampleLanding);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("brief");
   const [viewport, setViewport] = useState<PreviewViewport>("desktop");
@@ -58,7 +69,7 @@ export function DashboardWorkspace() {
 
   const jsonContent = useMemo(() => JSON.stringify(landing, null, 2), [landing]);
 
-  function updateForm(field: keyof LandingInput, value: string) {
+  function updateForm(field: keyof LandingPromptInput, value: string) {
     setForm((current) => ({
       ...current,
       [field]: value,
@@ -159,9 +170,9 @@ export function DashboardWorkspace() {
             <Panel className="p-5">
               <div className="mb-5 flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold">Briefing</h2>
+                  <h2 className="text-lg font-semibold">Prompt do site</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    Dados validados no servidor antes de gerar.
+                    Descreva o site em linguagem natural. A IA estrutura o resto.
                   </p>
                 </div>
                 <Save className="size-5 text-cyan-200" />
@@ -169,92 +180,58 @@ export function DashboardWorkspace() {
 
               <div className="grid gap-4">
                 <FieldShell
-                  error={actionError?.fieldErrors.businessName?.[0]}
-                  label="Nome do negocio"
-                >
-                  <Input
-                    invalid={Boolean(actionError?.fieldErrors.businessName)}
-                    maxLength={80}
-                    onChange={(event) =>
-                      updateForm("businessName", event.target.value)
-                    }
-                    placeholder="Ex: Nova Clinic"
-                    value={form.businessName}
-                  />
-                </FieldShell>
-
-                <FieldShell
-                  error={actionError?.fieldErrors.niche?.[0]}
-                  label="Nicho"
-                >
-                  <Input
-                    invalid={Boolean(actionError?.fieldErrors.niche)}
-                    maxLength={80}
-                    onChange={(event) => updateForm("niche", event.target.value)}
-                    placeholder="Ex: SaaS B2B, healthtech..."
-                    value={form.niche}
-                  />
-                </FieldShell>
-
-                <FieldShell
-                  error={actionError?.fieldErrors.audience?.[0]}
-                  label="Publico-alvo"
+                  error={actionError?.fieldErrors.prompt?.[0]}
+                  hint={`${form.prompt.length}/4000`}
+                  label="Prompt"
                 >
                   <Textarea
-                    invalid={Boolean(actionError?.fieldErrors.audience)}
-                    maxLength={160}
+                    className="min-h-64"
+                    invalid={Boolean(actionError?.fieldErrors.prompt)}
+                    maxLength={4000}
                     onChange={(event) =>
-                      updateForm("audience", event.target.value)
+                      updateForm("prompt", event.target.value)
                     }
-                    placeholder="Quem compra, decide ou influencia?"
-                    value={form.audience}
+                    placeholder="Ex: Crie uma landing page para uma startup chamada LumePay, fintech B2B que ajuda diretores financeiros a antecipar recebiveis. Publico-alvo: CFOs de empresas em crescimento. Oferta: plataforma com analise de risco em tempo real. Objetivo: agendar demo."
+                    value={form.prompt}
                   />
                 </FieldShell>
 
                 <FieldShell
-                  error={actionError?.fieldErrors.offer?.[0]}
-                  label="Principal oferta"
-                >
-                  <Textarea
-                    invalid={Boolean(actionError?.fieldErrors.offer)}
-                    maxLength={180}
-                    onChange={(event) => updateForm("offer", event.target.value)}
-                    placeholder="O que sera vendido nesta landing?"
-                    value={form.offer}
-                  />
-                </FieldShell>
-
-                <FieldShell
-                  error={actionError?.fieldErrors.brandTone?.[0]}
-                  label="Tom da marca"
+                  error={actionError?.fieldErrors.provider?.[0]}
+                  label="IA geradora"
                 >
                   <Select
-                    invalid={Boolean(actionError?.fieldErrors.brandTone)}
+                    invalid={Boolean(actionError?.fieldErrors.provider)}
                     onChange={(event) =>
-                      updateForm("brandTone", event.target.value)
+                      updateForm("provider", event.target.value)
                     }
-                    value={form.brandTone}
+                    value={form.provider}
                   >
-                    <option>consultivo e premium</option>
-                    <option>direto e comercial</option>
-                    <option>calmo e minimalista</option>
-                    <option>tecnico e visionario</option>
-                    <option>elegante e corporativo</option>
+                    {providerOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </Select>
                 </FieldShell>
 
                 <FieldShell
-                  error={actionError?.fieldErrors.pageGoal?.[0]}
-                  label="Objetivo da pagina"
+                  error={actionError?.fieldErrors.model?.[0]}
+                  hint="opcional"
+                  label="Modelo"
                 >
-                  <Textarea
-                    invalid={Boolean(actionError?.fieldErrors.pageGoal)}
-                    maxLength={180}
+                  <Input
+                    invalid={Boolean(actionError?.fieldErrors.model)}
+                    maxLength={120}
                     onChange={(event) =>
-                      updateForm("pageGoal", event.target.value)
+                      updateForm("model", event.target.value)
                     }
-                    placeholder="Ex: gerar leads, vender plano, agendar demo..."
-                    value={form.pageGoal}
+                    placeholder={
+                      form.provider === "anthropic"
+                        ? "claude-sonnet-4-5-20250929"
+                        : "mock-local"
+                    }
+                    value={form.model || ""}
                   />
                 </FieldShell>
 
@@ -282,7 +259,7 @@ export function DashboardWorkspace() {
                   ) : (
                     <Sparkles className="size-4" />
                   )}
-                  Gerar estrutura
+                  Gerar site com IA
                 </Button>
               </div>
             </Panel>
@@ -370,8 +347,20 @@ function BriefSummary({ landing }: { landing: GeneratedLanding }) {
     <Panel className="p-5">
       <h2 className="text-lg font-semibold">Estrutura gerada</h2>
       <p className="mt-1 text-sm text-slate-400">
-        Mapa de secoes, objecoes e componentes sugeridos.
+        Mapa de secoes, objecoes e componentes sugeridos pela IA.
       </p>
+      <div className="mt-5 rounded-lg border border-white/10 bg-black/20 p-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          Prompt base
+        </p>
+        <p className="mt-2 line-clamp-5 text-sm leading-6 text-slate-300">
+          {landing.input.sourcePrompt}
+        </p>
+        <p className="mt-3 text-xs text-cyan-100">
+          Provider: {landing.input.aiProvider}
+          {landing.input.aiModel ? ` / ${landing.input.aiModel}` : ""}
+        </p>
+      </div>
       <div className="mt-5 grid gap-3">
         {landing.structure.map((section) => (
           <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3" key={section.id}>
@@ -542,7 +531,7 @@ function EditorPanel({
 }
 
 const tabItems: { label: string; value: WorkspaceTab }[] = [
-  { label: "Brief", value: "brief" },
+  { label: "Prompt", value: "brief" },
   { label: "Editor", value: "editor" },
   { label: "Marketing Kit", value: "marketing" },
 ];

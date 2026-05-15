@@ -7,7 +7,21 @@ export const visualTones = [
 
 export type VisualTone = (typeof visualTones)[number];
 
+export const aiProviders = ["mock", "anthropic"] as const;
+
+export type AiProviderId = (typeof aiProviders)[number];
+
+export interface LandingPromptInput {
+  prompt: string;
+  visualTone: VisualTone;
+  provider: AiProviderId;
+  model?: string;
+}
+
 export interface LandingInput {
+  sourcePrompt: string;
+  aiProvider: AiProviderId;
+  aiModel?: string;
   businessName: string;
   niche: string;
   audience: string;
@@ -104,7 +118,7 @@ export interface GenerateLandingResult {
 
 export interface GenerateLandingError {
   ok: false;
-  fieldErrors: Partial<Record<keyof LandingInput, string[]>>;
+  fieldErrors: Partial<Record<keyof LandingPromptInput, string[]>>;
   formError?: string;
 }
 

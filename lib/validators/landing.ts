@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { visualTones } from "@/types/landing";
+import { aiProviders, visualTones } from "@/types/landing";
 import { hasUnsafeIntent, sanitizeTextInput } from "./sanitize";
 
 const safeBusinessText = (min: number, max: number, label: string) =>
@@ -15,14 +15,15 @@ const safeBusinessText = (min: number, max: number, label: string) =>
       message: `${label} ficou vazio depois da sanitizacao.`,
     });
 
-export const landingInputSchema = z.object({
-  businessName: safeBusinessText(2, 80, "Nome do negocio"),
-  niche: safeBusinessText(2, 80, "Nicho"),
-  audience: safeBusinessText(4, 160, "Publico-alvo"),
-  offer: safeBusinessText(4, 180, "Oferta principal"),
-  brandTone: safeBusinessText(3, 80, "Tom da marca"),
-  pageGoal: safeBusinessText(4, 180, "Objetivo da pagina"),
+export const landingPromptSchema = z.object({
+  prompt: safeBusinessText(20, 4000, "Prompt"),
   visualTone: z.enum(visualTones),
+  provider: z.enum(aiProviders),
+  model: z
+    .string()
+    .max(120, "Modelo deve ter no maximo 120 caracteres.")
+    .optional()
+    .transform((value) => (value ? sanitizeTextInput(value) : undefined)),
 });
 
-export type LandingInputSchema = z.infer<typeof landingInputSchema>;
+export type LandingPromptSchema = z.infer<typeof landingPromptSchema>;

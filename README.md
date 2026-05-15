@@ -1,6 +1,6 @@
 # AI Landing Lab
 
-AI Landing Lab is a modern full-stack prototype for generating professional landing pages from a business briefing. The app creates copy, sections, CTAs, objections, pricing, FAQ, visual tone, editable preview, JSON export, and a marketing kit.
+AI Landing Lab is a modern full-stack prototype for generating professional landing pages from a free-form prompt. The app creates copy, sections, CTAs, objections, pricing, FAQ, visual tone, editable preview, JSON export, and a marketing kit.
 
 ## Stack
 
@@ -16,9 +16,10 @@ AI Landing Lab is a modern full-stack prototype for generating professional land
 ## Main Features
 
 - Public SaaS landing page with premium dark design.
-- Dashboard briefing form for business name, niche, audience, offer, brand tone, goal, and visual tone.
+- Prompt-based dashboard for describing any business, product, service or campaign in natural language.
+- AI provider layer with local mock generation and Anthropic Claude Sonnet support.
 - Server action that validates and sanitizes input before generation.
-- Mock AI service in `lib/ai` prepared for Hugging Face integration.
+- AI service in `lib/ai` prepared for more providers.
 - Editable generated landing preview with desktop/mobile modes.
 - Visual tone switching: premium dark, minimal light, tech neon, corporate elegant.
 - Editor for headline, subheadline, CTAs, benefits, and FAQ.
@@ -50,6 +51,9 @@ Copy `.env.example` to `.env.local` for local development.
 
 ```bash
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+AI_DEFAULT_PROVIDER=mock
+ANTHROPIC_API_KEY=
+ANTHROPIC_MODEL=claude-sonnet-4-5-20250929
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 HF_API_TOKEN=
@@ -57,7 +61,7 @@ HF_TEXT_MODEL=
 HF_CLASSIFICATION_MODEL=
 ```
 
-Keep provider secrets server-side only. Do not create `NEXT_PUBLIC_HF_API_TOKEN` or expose the Supabase service-role key to client components.
+Keep provider secrets server-side only. Do not create `NEXT_PUBLIC_ANTHROPIC_API_KEY`, `NEXT_PUBLIC_HF_API_TOKEN`, or expose the Supabase service-role key to client components.
 
 ## Project Structure
 
@@ -73,7 +77,7 @@ components/
   marketing/              # Marketing Kit UI
   ui/                     # Button, fields, panel, reveal, segmented control
 lib/
-  ai/                     # Mock AI generation and future adapter contract
+  ai/                     # AI provider layer, mock generation and adapter contract
   db/                     # Local mock project store
   supabase/               # Server-only Supabase adapter
   validators/             # Zod schemas and sanitization
@@ -82,9 +86,37 @@ public/assets/            # Generated concept assets
 styles/                   # Design-token documentation
 ```
 
-## AI and Hugging Face Roadmap
+## AI Providers
 
-The current generator is deterministic and mocked in `lib/ai/generate.ts`. To connect Hugging Face later:
+The dashboard now generates from a free-form prompt. The user can choose:
+
+- `mock`: deterministic local generation, useful for development and demos.
+- `anthropic`: Claude Messages API through a server action.
+
+To use Claude Sonnet locally, create `.env.local`:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_MODEL=claude-sonnet-4-5-20250929
+```
+
+Then select **Claude Sonnet** in the dashboard. The key is read only on the server and is never sent to the browser.
+
+## Adding More AI Providers
+
+Provider integration is centralized in `lib/ai/generate.ts` and typed by `AiGenerationAdapter` in `lib/ai/prompt-contract.ts`.
+
+To add another model provider:
+
+1. Add the provider id to `aiProviders` in `types/landing.ts`.
+2. Add env vars to `.env.example`.
+3. Implement a server-only branch or adapter in `lib/ai/generate.ts`.
+4. Validate and sanitize model output before returning `GeneratedLanding`.
+5. Add the provider option to the dashboard selector.
+
+## Hugging Face Roadmap
+
+Hugging Face remains prepared as an additional provider path:
 
 1. Implement an adapter that matches `AiGenerationAdapter` in `lib/ai/prompt-contract.ts`.
 2. Call the adapter only from server actions or route handlers.
@@ -120,7 +152,7 @@ The project includes `vercel.json` with standard commands:
 - Build: `npm run build`
 - Dev: `npm run dev`
 
-In Vercel, configure the production variables from `.env.example`. Only `NEXT_PUBLIC_APP_URL` should be public. Keep Supabase service-role and Hugging Face tokens as server-side encrypted environment variables.
+In Vercel, configure the production variables from `.env.example`. Only `NEXT_PUBLIC_APP_URL` should be public. Keep Anthropic, Supabase service-role and Hugging Face tokens as server-side encrypted environment variables.
 
 ## Security
 
@@ -130,6 +162,7 @@ Key practices already implemented:
 
 - Zod validation on server action input.
 - Sanitization against HTML tags, control characters, inline-event hints, and dangerous protocols.
+- AI output is parsed as JSON, validated, normalized and sanitized before rendering.
 - No `dangerouslySetInnerHTML`.
 - No AI or Supabase secrets in client components.
 - Lazy server-only Supabase initialization.
@@ -156,7 +189,7 @@ git commit -m "Polish dashboard preview and marketing kit"
 
 - Persist generated projects with Supabase.
 - Add auth and user workspaces.
-- Add real Hugging Face inference adapters.
+- Add OpenAI, Hugging Face or other provider adapters.
 - Add project history and version diffing.
 - Export a deployable landing page package.
 - Add Canva export templates for cover, banner, thumbnail, and mockup.

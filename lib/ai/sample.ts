@@ -4,6 +4,10 @@ export const sampleLanding: GeneratedLanding = {
   id: "landing-nova-clinic-healthtech",
   createdAt: "2026-05-15T12:00:00.000Z",
   input: {
+    sourcePrompt:
+      "Crie uma landing page para a Nova Clinic, uma healthtech para clinicas premium. O publico-alvo sao gestores de clinicas que precisam aumentar agendamentos qualificados. A oferta principal e uma agenda inteligente com automacao de follow-up. O objetivo e agendar uma demonstracao comercial com tom consultivo e premium.",
+    aiProvider: "mock",
+    aiModel: "mock-local",
     businessName: "Nova Clinic",
     niche: "healthtech para clinicas premium",
     audience: "gestores de clinicas que precisam aumentar agendamentos qualificados",

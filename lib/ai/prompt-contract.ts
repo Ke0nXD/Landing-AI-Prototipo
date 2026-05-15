@@ -1,7 +1,9 @@
-import type { LandingInput } from "@/types/landing";
+import type { GeneratedLanding, LandingPromptInput } from "@/types/landing";
 
 export interface AiGenerationAdapter {
-  generate(input: LandingInput): Promise<string>;
+  id: string;
+  label: string;
+  generate(input: LandingPromptInput): Promise<GeneratedLanding>;
 }
 
 export const futureHuggingFaceTasks = [
@@ -17,5 +19,5 @@ export const aiSafetyContract = {
   serverPolicy:
     "Generation runs behind server actions or route handlers, with Zod validation and sanitized inputs before model calls.",
   swapPlan:
-    "Replace the mock functions in lib/ai/generate.ts with a Hugging Face Inference Endpoint adapter that implements AiGenerationAdapter.",
+    "Add providers that implement AiGenerationAdapter. The app already supports mock generation and Anthropic Claude through server-side environment variables.",
 } as const;

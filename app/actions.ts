@@ -1,13 +1,16 @@
 "use server";
 
-import type { GenerateLandingActionResult, LandingInput } from "@/types/landing";
-import { generateLandingBlueprint } from "@/lib/ai/generate";
-import { landingInputSchema } from "@/lib/validators/landing";
+import type {
+  GenerateLandingActionResult,
+  LandingPromptInput,
+} from "@/types/landing";
+import { generateLandingFromPrompt } from "@/lib/ai/generate";
+import { landingPromptSchema } from "@/lib/validators/landing";
 
 export async function generateLandingAction(
-  input: LandingInput,
+  input: LandingPromptInput,
 ): Promise<GenerateLandingActionResult> {
-  const parsed = landingInputSchema.safeParse(input);
+  const parsed = landingPromptSchema.safeParse(input);
 
   if (!parsed.success) {
     return {
@@ -18,13 +21,25 @@ export async function generateLandingAction(
   }
 
   try {
-    const data = await generateLandingBlueprint(parsed.data);
+    const data = await generateLandingFromPrompt(parsed.data);
 
     return {
       ok: true,
       data,
     };
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.includes("ANTHROPIC_API_KEY")
+    ) {
+      return {
+        ok: false,
+        fieldErrors: {},
+        formError:
+          "Para usar Claude Sonnet, adicione ANTHROPIC_API_KEY no .env.local ou selecione Mock local.",
+      };
+    }
+
     return {
       ok: false,
       fieldErrors: {},
